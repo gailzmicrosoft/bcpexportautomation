@@ -53,6 +53,7 @@ Function ExportBCPData(
 	$Database = "PDWDemo",
 	$Schema = "dbo",
 	$Table = "CUSTOMER",
+	$Encoding = "UTF8",
 	$UseIntegratedSecurity = "0",
 	$UserName = "username",
 	$Password = "P@ss555w0rd",
@@ -96,6 +97,7 @@ Function ExportBCPData(
 			$serverinfo.add('FileName', $DestLocation + $FileName + $FileExtention)
 		}
 
+        Write-Host "Encoding: " $Encoding 
 	    
 		# Set the File name in the Arguments list
 		$Arguments = $Arguments + ' ' + """$($serverinfo['FileName'])"""
@@ -132,6 +134,14 @@ Function ExportBCPData(
 			$Arguments = $Arguments + ' -w '
 			$displayArgs = $displayArgs + ' -w '
 		}
+
+		# UTF-8 encoding support
+		# https://support.microsoft.com/en-us/help/3136780/utf-8-encoding-support-for-the-bcp-utility-and-bulk-insert-transact-sq
+		If ($Encoding.toUpper() -eq 'UTF8') {
+			$Arguments = $Arguments + ' -C 65001 '
+			$displayArgs = $displayArgs + ' -C 65001 ' 
+		}
+
 	    
 		If ($RowDelimiter -ne '') {
 			$Arguments = $Arguments + " -r `"$RowDelimiter`"" 
@@ -157,7 +167,7 @@ Function ExportBCPData(
 		
 
 		#Display the command that does not have the real user name and password 
-		#Write-Host "Command: $displayArgs"  -ForegroundColor Green
+		Write-Host "Command: $displayArgs"  -ForegroundColor Green
 		
 		try { 
 			[String]$Results = Invoke-Expression -Command $Arguments
@@ -285,6 +295,7 @@ ForEach ($BCPcmd in $csvFile) {
 		$Database = $BCPcmd.DatabaseName
 		$Schema = $BCPcmd.SchemaName 
 		$Table = $BCPcmd.TableName
+		$Encoding =$BCPcmd.Encoding
 		$UseQuery = $BCPcmd.UseQuery
 		$Query = $BCPcmd.Query
 		$RowDelimiter = $BCPcmd.RowDelimiter
@@ -310,7 +321,7 @@ ForEach ($BCPcmd in $csvFile) {
   
 		}
       
-		$expData = ExportBCPData -BcpLocation $BcpLocation -Server $Server -Database $Database -Schema $Schema -Table $Table -UseIntegratedSecurity $UseIntegratedSecurity -UserName $UserName -Password $Password -RowDelimiter $RowDelimiter -ColumnDelimiter $ColumnDelimiter -BatchSize $BatchSize -UseCharDataType $UseCharDataType -DestLocation $DestLocation -AutoCreateFileName $AutoCreateFileName  -FileName $FileName -FileExtention $FileExtention UseQuery $UseQuery -Query $Query 
+		$expData = ExportBCPData -BcpLocation $BcpLocation -Server $Server -Database $Database -Schema $Schema -Table $Table -Encoding $Encoding -UseIntegratedSecurity $UseIntegratedSecurity -UserName $UserName -Password $Password -RowDelimiter $RowDelimiter -ColumnDelimiter $ColumnDelimiter -BatchSize $BatchSize -UseCharDataType $UseCharDataType -DestLocation $DestLocation -AutoCreateFileName $AutoCreateFileName  -FileName $FileName -FileExtention $FileExtention UseQuery $UseQuery -Query $Query 
       
 		if ($expData.Get_Item("Status") -eq '-1') {
 			# will break out on first error 
